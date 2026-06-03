@@ -4,6 +4,7 @@ matplotlib
 seaborn
 networkx
 scikit-learn
+xgboost
 plotly
 jupyter
 notebook
