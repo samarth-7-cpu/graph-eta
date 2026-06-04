@@ -70,7 +70,7 @@ TARGET = 'actual_time'
 X = df[feature_cols]
 y = df[TARGET]
 
-train_df = df[df['data'] == 'train']
+train_df = df[df['data'] == 'training']
 test_df  = df[df['data'] == 'test']
 
 X_train = train_df[feature_cols]
