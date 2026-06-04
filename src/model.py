@@ -70,11 +70,14 @@ TARGET = 'actual_time'
 X = df[feature_cols]
 y = df[TARGET]
 
+train_df = df[df['data'] == 'train']
+test_df  = df[df['data'] == 'test']
 
+X_train = train_df[feature_cols]
+y_train = train_df[TARGET]
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+X_test  = test_df[feature_cols]
+y_test  = test_df[TARGET]
 
 print(f"Train: {X_train.shape}, Test: {X_test.shape}")
 
