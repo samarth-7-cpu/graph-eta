@@ -45,7 +45,7 @@ df_ftl['time_of_day'] = df_ftl['hour'].apply(time_bucket)
 df_ftl['delay_ratio'] = df_ftl['actual_time'] / df_ftl['osrm_time']
 df_ftl['is_cutoff']   = df_ftl['is_cutoff'].astype(int)
 
-# 3. BUILD TARGET COLUMN
+
 
 
 print(f"\nroute_type values: {df_ftl['route_type'].unique()}")
@@ -56,7 +56,7 @@ print(f"FTL trips    : {df_ftl['is_FTL'].sum()} ({df_ftl['is_FTL'].mean()*100:.1
 print(f"Carting trips: {(df_ftl['is_FTL']==0).sum()} ({(df_ftl['is_FTL']==0).mean()*100:.1f}%)")
 
 
-# 4. MAP HUB GRAPH FEATURES
+
 
 
 print("\nMapping hub graph features...")
@@ -76,7 +76,7 @@ df_ftl['dst_clustering']        = df_ftl['destination_center'].map(hub_index['cl
 print("Graph features mapped!")
 
 
-# 5. FEATURE LIST
+
 
 
 ftl_features = [
@@ -113,8 +113,6 @@ if missing:
     ftl_features = [c for c in ftl_features if c in df_ftl.columns]
 
 
-# 6. TRAIN / TEST SPLIT (using data column)
-
 
 train_df = df_ftl[df_ftl['data'] == 'training']
 test_df  = df_ftl[df_ftl['data'] == 'test']
@@ -127,7 +125,6 @@ y_test  = test_df[TARGET]
 print(f"\nTrain: {X_train.shape}, Test: {X_test.shape}")
 
 
-# 7. TRAIN FTL vs CARTING CLASSIFIER
 
 
 print("\nTraining FTL vs Carting Classifier...")
@@ -149,7 +146,7 @@ y_pred_proba = ftl_model.predict_proba(X_test)[:, 1]
 
 print("Classifier trained!")
 
-# 8. EVALUATE
+
 
 
 acc    = accuracy_score(y_test, y_pred)
@@ -166,7 +163,7 @@ print("\nClassification Report:")
 print(report)
 
 
-# 9. CONFUSION MATRIX PLOT
+
 
 
 cm = confusion_matrix(y_test, y_pred)
@@ -194,9 +191,7 @@ plt.savefig(output_dir / "ftl_feature_importance.png", dpi=150)
 plt.close()
 print("Saved: ftl_feature_importance.png")
 
-# ─────────────────────────────────────────
-# 11. TIME-COST TRADE-OFF BY DISTANCE
-# ─────────────────────────────────────────
+
 
 df_ftl['distance_bucket'] = pd.cut(
     df_ftl['osrm_distance'],
