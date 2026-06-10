@@ -13,6 +13,7 @@ data_path = project_root / "data" / "raw" / "delivery_data.csv"
 
 df = pd.read_csv(data_path)
 df = pd.get_dummies(df, columns=['route_type'], prefix='route', dtype=int)
+
 df['od_start_time'] = pd.to_datetime(df['od_start_time'])
 df['od_end_time']   = pd.to_datetime(df['od_end_time'])
 
