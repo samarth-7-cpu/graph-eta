@@ -6,9 +6,9 @@ from sklearn.preprocessing import LabelEncoder
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-# ─────────────────────────────────────────
-# 0. PATHS
-# ─────────────────────────────────────────
+
+
+
 
 project_root = Path(__file__).resolve().parents[1]
 data_path = project_root / "data" / "raw" / "delivery_data.csv"
@@ -16,18 +16,13 @@ hub_path = project_root / "data" / "processed" / "graph_features.csv"  # ← cha
 output_dir = project_root / "outputs"
 output_dir.mkdir(exist_ok=True)
 
-# ─────────────────────────────────────────
-# 1. LOAD DATA
-# ─────────────────────────────────────────
+
 
 df = pd.read_csv(data_path)
 df = pd.get_dummies(df, columns=['route_type'], prefix='route', dtype=int)
 df['od_start_time'] = pd.to_datetime(df['od_start_time'])
 df['od_end_time'] = pd.to_datetime(df['od_end_time'])
 
-# ─────────────────────────────────────────
-# 2. FEATURE ENGINEERING
-# ─────────────────────────────────────────
 
 df['hour'] = df['od_start_time'].dt.hour
 df['day_of_week'] = df['od_start_time'].dt.dayofweek
@@ -48,9 +43,6 @@ def time_bucket(h):
 df['time_of_day'] = df['hour'].apply(time_bucket)
 df['delay_ratio'] = df['actual_time'] / df['osrm_time']
 
-# ─────────────────────────────────────────
-# 3. ENCODE CATEGORICALS
-# ─────────────────────────────────────────
 
 le_src = LabelEncoder()
 le_dest = LabelEncoder()
@@ -58,9 +50,7 @@ le_dest = LabelEncoder()
 df['source_enc'] = le_src.fit_transform(df['source_center'])
 df['destination_enc'] = le_dest.fit_transform(df['destination_center'])
 
-# ─────────────────────────────────────────
-# 4. BASELINE FEATURES & TARGET
-# ─────────────────────────────────────────
+
 
 TARGET = 'actual_time'
 
@@ -85,9 +75,7 @@ baseline_features = [
     'destination_enc',
 ]
 
-# ─────────────────────────────────────────
-# 5. TRAIN / TEST SPLIT (using data column)
-# ─────────────────────────────────────────
+
 
 train_df = df[df['data'] == 'training']
 test_df = df[df['data'] == 'test']
@@ -99,9 +87,7 @@ y_test = test_df[TARGET]
 
 print(f"Train: {X_train.shape}, Test: {X_test.shape}")
 
-# ─────────────────────────────────────────
-# 6. TRAIN BASELINE MODEL
-# ─────────────────────────────────────────
+
 
 baseline = XGBRegressor(
     n_estimators=300,
@@ -116,9 +102,7 @@ baseline = XGBRegressor(
 baseline.fit(X_train, y_train)
 y_pred = baseline.predict(X_test)
 
-# ─────────────────────────────────────────
-# 7. BASELINE RESULTS
-# ─────────────────────────────────────────
+
 
 mae_base = mean_absolute_error(y_test, y_pred)
 w15_base = np.mean(np.abs(y_pred - y_test.values) / y_test.values < 0.15) * 100
@@ -149,13 +133,6 @@ results_df['abs_error'] = np.abs(y_pred - y_test.values)
 results_df.to_csv(output_dir / "baseline_predictions.csv", index=False)
 print("Saved: baseline_predictions.csv")
 
-# ═════════════════════════════════════════
-# GRAPH-ENHANCED MODEL
-# ═════════════════════════════════════════
-
-# ─────────────────────────────────────────
-# 8. LOAD & MAP HUB GRAPH FEATURES
-# ─────────────────────────────────────────
 
 print("\nLoading hub features...")
 hub_df = pd.read_csv(hub_path)
@@ -176,9 +153,7 @@ df['dst_clustering'] = df['destination_center'].map(hub_index['clustering']).fil
 print("Hub features mapped!")
 print(f"NaN check: {df[['src_betweenness', 'dst_betweenness']].isna().sum().sum()} nulls")
 
-# ─────────────────────────────────────────
-# 9. GRAPH FEATURE LIST
-# ─────────────────────────────────────────
+
 
 graph_features = baseline_features + [
     'src_degree_centrality',
@@ -202,9 +177,7 @@ y_graph_test = test_df[TARGET]
 
 print(f"\nGraph — Train: {X_graph_train.shape}, Test: {X_graph_test.shape}")
 
-# ─────────────────────────────────────────
-# 10. TRAIN GRAPH-ENHANCED MODEL
-# ─────────────────────────────────────────
+
 
 print("\nTraining Graph-Enhanced XGBoost...")
 
@@ -223,9 +196,6 @@ y_pred_graph = graph_model.predict(X_graph_test)
 
 print("Graph model trained!")
 
-# ─────────────────────────────────────────
-# 11. COMPARE BOTH MODELS
-# ─────────────────────────────────────────
 
 mae_graph = mean_absolute_error(y_graph_test, y_pred_graph)
 w15_graph = np.mean(np.abs(y_pred_graph - y_graph_test.values) / y_graph_test.values < 0.15) * 100
@@ -244,9 +214,7 @@ print(f"MAE improvement      : {improvement_mae:.2f}%")
 print(f"%within15 improvement: {improvement_w15:.2f}pp")
 print("=" * 55)
 
-# ─────────────────────────────────────────
-# 12. GRAPH FEATURE IMPORTANCE PLOT
-# ─────────────────────────────────────────
+
 
 imp_graph = pd.Series(graph_model.feature_importances_, index=graph_features)
 imp_graph.sort_values().tail(20).plot(kind='barh', figsize=(9, 7), color='darkorange')
@@ -257,9 +225,7 @@ plt.savefig(output_dir / "graph_feature_importance.png", dpi=150)
 plt.close()
 print("Saved: graph_feature_importance.png")
 
-# ─────────────────────────────────────────
-# 13. SAVE GRAPH PREDICTIONS
-# ─────────────────────────────────────────
+
 
 results_graph = pd.DataFrame({
     'actual_time': y_graph_test.values,
@@ -272,4 +238,4 @@ results_graph = pd.DataFrame({
 results_graph.to_csv(output_dir / "graph_predictions.csv", index=False)
 print("Saved: graph_predictions.csv")
 
-print("\n✅ All done!")
+print("\n All done!")
