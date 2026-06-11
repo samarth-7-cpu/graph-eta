@@ -269,4 +269,64 @@ results_graph = pd.DataFrame({
 results_graph.to_csv(output_dir / "graph_predictions.csv", index=False)
 print("Saved: graph_predictions.csv")
 
+
+
+
+# Calculate errors
+error_base  = y_pred       - y_test.values   # baseline errors
+error_graph = y_pred_graph - y_graph_test.values  # graph model errors
+
+plt.figure(figsize=(10, 5))
+
+plt.hist(error_base,  bins=100, alpha=0.5, color='steelblue',
+         label='Baseline', range=(-500, 500))
+plt.hist(error_graph, bins=100, alpha=0.5, color='darkorange',
+         label='Graph-Enhanced', range=(-500, 500))
+
+plt.axvline(x=0, color='red', linestyle='--', label='Perfect prediction')
+plt.xlabel("Prediction Error (mins)")
+plt.ylabel("Number of Trips")
+plt.title("Error Distribution — Baseline vs Graph-Enhanced Model")
+plt.legend()
+plt.tight_layout()
+plt.savefig(output_dir / "error_distribution.png", dpi=150)
+plt.close()
+
+
+
+
+plt.figure(figsize=(10, 5))
+
+# Sample 2000 points so plot isn't too crowded
+idx = np.random.choice(len(y_test), size=2000, replace=False)
+
+# Baseline
+plt.subplot(1, 2, 1)
+plt.scatter(y_test.values[idx], y_pred[idx],
+            alpha=0.3, color='steelblue', s=10)
+plt.plot([0, y_test.max()], [0, y_test.max()],
+         color='red', linestyle='--', label='Perfect')
+plt.xlabel("Actual Time (mins)")
+plt.ylabel("Predicted Time (mins)")
+plt.title("Baseline — Actual vs Predicted")
+plt.legend()
+
+# Graph model
+plt.subplot(1, 2, 2)
+plt.scatter(y_graph_test.values[idx], y_pred_graph[idx],
+            alpha=0.3, color='darkorange', s=10)
+plt.plot([0, y_graph_test.max()], [0, y_graph_test.max()],
+         color='red', linestyle='--', label='Perfect')
+plt.xlabel("Actual Time (mins)")
+plt.ylabel("Predicted Time (mins)")
+plt.title("Graph-Enhanced — Actual vs Predicted")
+plt.legend()
+
+plt.tight_layout()
+plt.savefig(output_dir / "actual_vs_predicted.png", dpi=150)
+plt.close()
+
+
+print("Saved: actual_vs_predicted.png")
+
 print("\n All done!")
