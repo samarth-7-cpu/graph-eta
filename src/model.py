@@ -6,17 +6,19 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.preprocessing import LabelEncoder
 import matplotlib.pyplot as plt
 from pathlib import Path
+#0. PATHS
 
 project_root = Path(__file__).resolve().parents[1]
 
 data_path = project_root / "data" / "raw" / "delivery_data.csv"
+#1. LOAD DATA
 
 df = pd.read_csv(data_path)
 df = pd.get_dummies(df, columns=['route_type'], prefix='route', dtype=int)
-
 df['od_start_time'] = pd.to_datetime(df['od_start_time'])
 df['od_end_time']   = pd.to_datetime(df['od_end_time'])
 
+# 2. FEATURE ENGINEERING
 df['hour']        = df['od_start_time'].dt.hour
 df['day_of_week'] = df['od_start_time'].dt.dayofweek
 df['is_weekend']  = df['day_of_week'].isin([5, 6]).astype(int)
@@ -34,7 +36,7 @@ df['time_of_day'] = df['hour'].apply(time_bucket)
 df['delay_ratio'] = df['actual_time'] / df['osrm_time']
 
 
-
+# 3. ENCODE CATEGORICALS
 
 
 le_src  = LabelEncoder()
@@ -43,7 +45,7 @@ le_dest = LabelEncoder()
 df['source_enc']      = le_src.fit_transform(df['source_center'])
 df['destination_enc'] = le_dest.fit_transform(df['destination_center'])
 
-
+# 4. BASELINE FEATURES & TARGET
 
 feature_cols = [
     'osrm_time',                    # OSRM prediction
@@ -68,6 +70,8 @@ feature_cols = [
 
 TARGET = 'actual_time'
 
+# 5. TRAIN / TEST SPLIT (using data column)
+
 X = df[feature_cols]
 y = df[TARGET]
 
@@ -82,7 +86,7 @@ y_test  = test_df[TARGET]
 
 print(f"Train: {X_train.shape}, Test: {X_test.shape}")
 
-
+# 6. TRAIN BASELINE MODEL
 
 baseline = XGBRegressor(
     n_estimators=300,
@@ -97,6 +101,8 @@ baseline = XGBRegressor(
 baseline.fit(X_train, y_train)
 y_pred = baseline.predict(X_test)
 
+
+# 7. BASELINE RESULTS
 
 mae = mean_absolute_error(y_test, y_pred)
 
@@ -113,7 +119,7 @@ print(f"OSRM Baseline MAE: {mean_absolute_error(y_test, X_test['osrm_time']):.2f
 print("=" * 40)
 
 
-
+# Feature importance plot
 importances = pd.Series(baseline.feature_importances_, index=feature_cols)
 importances.sort_values().plot(kind='barh', figsize=(8, 6), color='steelblue')
 
@@ -130,7 +136,7 @@ plt.savefig(
 plt.show()
 
 
-
+# Save baseline predictions
 results_df = X_test.copy()
 results_df['actual_time']   = y_test.values
 results_df['baseline_pred'] = y_pred
