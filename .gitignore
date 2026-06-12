@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Large data files — too big for GitHub
+data/raw/delivery_data.csv
+
+# Large output images — not needed for dashboard
+outputs/*.png
+
+# Trained model files — include outputs/*.pkl so dashboard works on Cloud
+# (pkl files are small ~3MB total, safe to commit)
